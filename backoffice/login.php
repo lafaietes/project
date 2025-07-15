@@ -1,4 +1,6 @@
 <?php
+require '../includes/header.php';
+
 session_start();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -16,12 +18,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 
-<form method="POST">
+<main class="container">
   <h2>Login</h2>
   <?php if (isset($erro)) echo "<p style='color:red;'>$erro</p>"; ?>
-  <label>Utilizador:</label><br>
-  <input type="text" name="utilizador"><br>
-  <label>Senha:</label><br>
-  <input type="password" name="senha"><br><br>
-  <button type="submit">Entrar</button>
-</form>
+  <form method="POST">
+    <label>Utilizador:</label><br>
+    <input type="text" name="utilizador"><br>
+    <label>Senha:</label><br>
+    <input type="password" name="senha"><br><br>
+    <button type="submit">Entrar</button>
+  </form>
+</main>
+
+<?php require '../includes/footer.php'; ?>

@@ -7,9 +7,11 @@ if (!isset($_SESSION['admin'])) {
 
 require 'uploads/db.php';
 
-// Se o formulário for submetido
+$mensagem = '';
+$erro = '';
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $descricao = $_POST['descricao'];
+    $descricao = $conn->real_escape_string($_POST['descricao']);
     $ficheiro = $_FILES['ficheiro'];
 
     if ($ficheiro['error'] === 0) {
@@ -17,7 +19,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $destino = 'uploads/' . $nomeFinal;
 
         if (move_uploaded_file($ficheiro['tmp_name'], $destino)) {
-            // Corrigido: usar coluna "imagem" em vez de "ficheiro"
             $stmt = $conn->prepare("INSERT INTO galeria (descricao, imagem, criado_em) VALUES (?, ?, NOW())");
             $stmt->bind_param("ss", $descricao, $nomeFinal);
             $stmt->execute();
@@ -29,6 +30,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $erro = "Erro no upload.";
     }
 }
+
+$stmt = $conn->prepare("SELECT id, descricao, imagem FROM galeria ORDER BY criado_em DESC");
+$stmt->execute();
+$result = $stmt->get_result();
 ?>
 
 <?php require '../includes/header.php'; ?>
@@ -36,8 +41,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <main class="container">
   <h2>Backoffice - Galeria</h2>
 
-  <?php if (isset($mensagem)) echo "<p style='color:green;'>$mensagem</p>"; ?>
-  <?php if (isset($erro)) echo "<p style='color:red;'>$erro</p>"; ?>
+  <?php if ($mensagem) echo "<p style='color:green;'>$mensagem</p>"; ?>
+  <?php if ($erro) echo "<p style='color:red;'>$erro</p>"; ?>
 
   <form method="POST" enctype="multipart/form-data">
     <label>Descrição:</label><br>
@@ -53,20 +58,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   <h3>Imagens na Galeria</h3>
   <div style="display: flex; flex-wrap: wrap; gap: 15px;">
-    <?php
-    $res = $conn->query("SELECT * FROM galeria ORDER BY criado_em DESC");
-    while ($item = $res->fetch_assoc()):
-    ?>
-<div style="width: 200px; text-align: center; border: 1px solid #ccc; padding: 10px; border-radius: 8px;">
-  <img src="uploads/<?= htmlspecialchars($item['imagem']) ?>" width="100%" style="border-radius: 8px;">
-  <p><?= htmlspecialchars($item['descricao']) ?></p>
-  <div style="margin-top: 10px;">
-    <a href="editar.php?id=<?= $item['id'] ?>">✏️ Editar</a> |
-    <a href="eliminar.php?id=<?= $item['id'] ?>" onclick="return confirm('Tem a certeza que deseja eliminar esta imagem?');">🗑️ Eliminar</a>
-  </div>
-</div>
+    <?php while ($item = $result->fetch_assoc()): ?>
+    <div style="width: 200px; text-align: center; border: 1px solid #ccc; padding: 10px; border-radius: 8px;">
+      <img src="uploads/<?= htmlspecialchars($item['imagem']) ?>" width="100%" style="border-radius: 8px;">
+      <p><?= htmlspecialchars($item['descricao']) ?></p>
+      <div style="margin-top: 10px;">
+        <a href="editar.php?id=<?= $item['id'] ?>">✏️ Editar</a> |
+        <a href="eliminar.php?id=<?= $item['id'] ?>" onclick="return confirm('Tem a certeza que deseja eliminar esta imagem?');">🗑️ Eliminar</a>
+      </div>
+    </div>
     <?php endwhile; ?>
   </div>
 </main>
 
-<?php require '../includes/footer.php'; ?>
+<?php
+$stmt->close();
+closeConnection($conn);
+require '../includes/footer.php';
+?>

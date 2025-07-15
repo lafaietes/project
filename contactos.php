@@ -5,15 +5,14 @@ require 'backoffice/uploads/db.php';
 $mensagem_enviada = false;
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $nome = $_POST['nome'];
-    $email = $_POST['email'];
-    $mensagem = $_POST['mensagem'];
+    $nome = $conn->real_escape_string($_POST['nome']);
+    $email = $conn->real_escape_string($_POST['email']);
+    $mensagem = $conn->real_escape_string($_POST['mensagem']);
 
-    $stmt = $conn->prepare("INSERT INTO mensagens (nome, email, mensagem) VALUES (?, ?, ?)");
+    $stmt = $conn->prepare("INSERT INTO mensagens (nome, email, mensagem, lida) VALUES (?, ?, ?, 0)");
     $stmt->bind_param("sss", $nome, $email, $mensagem);
-    $stmt->execute();
-
-    $mensagem_enviada = true;
+    $mensagem_enviada = $stmt->execute();
+    $stmt->close();
 }
 ?>
 
@@ -38,4 +37,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   </form>
 </main>
 
-<?php require 'includes/footer.php'; ?>
+<?php
+require 'includes/footer.php';
+closeConnection($conn);
+?>
